@@ -3,8 +3,7 @@ import "antd/dist/reset.css";
 import "./globals.css";
 import Providers from "./providers";
 import BootstrapClient from "./BootstrapClient";
-import Header from "@/components/Layout/Header";
-import Footer from "@/components/Layout/Footer";
+import SiteChrome from "@/components/Layout/SiteChrome";
 
 export const metadata = {
   title: {
@@ -19,13 +18,11 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
+    <html lang="en" data-scroll-behavior="smooth">
       <body>
         <Providers>
           <BootstrapClient />
-          <Header />
-          <main style={{ minHeight: "70vh" }}>{children}</main>
-          <Footer />
+          <SiteChrome>{children}</SiteChrome>
         </Providers>
       </body>
     </html>

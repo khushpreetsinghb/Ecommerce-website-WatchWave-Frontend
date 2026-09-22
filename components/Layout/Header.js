@@ -25,7 +25,7 @@ const Header = () => {
   };
   return (
     <>
-      <nav className="navbar navbar-expand-lg bg-body-tertiary fixed-top">
+      <nav className="navbar navbar-expand-lg fixed-top">
         <div className="container-fluid">
           <button
             className="navbar-toggler"
@@ -40,9 +40,10 @@ const Header = () => {
           </button>
           <div className="collapse navbar-collapse" id="navbarTogglerDemo01">
             <Link href="/" className="navbar-brand">
-              WatchWave
+              <span className="brand-mark">W</span>
+              Watch<span className="brand-gold">Wave</span>
             </Link>
-            <ul className="navbar-nav ms-auto mb-2 mb-lg-0">
+            <ul className="navbar-nav ms-auto mb-2 mb-lg-0 align-items-lg-center">
               <SearchInput />
               <li className="nav-item">
                 <NavLink href="/" className="nav-link ">

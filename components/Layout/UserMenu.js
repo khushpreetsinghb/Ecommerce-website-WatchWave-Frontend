@@ -21,6 +21,12 @@ const UserMenu = () => {
           >
             Orders
           </NavLink>
+          <NavLink
+            href="/dashboard/user/change-password"
+            className="list-group-item list-group-item-action"
+          >
+            Change Password
+          </NavLink>
         </div>
       </div>
     </div>

@@ -1,26 +1,18 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import dynamic from "next/dynamic";
+import React, { useState } from "react";
 import { useCart } from "@/context/cart";
 import { useAuth } from "@/context/auth";
 import { useRouter } from "next/navigation";
 import { AiFillWarning } from "react-icons/ai";
 import axios from "@/lib/api-client";
 import { apiUrl } from "@/lib/api";
+import { formatINR } from "@/lib/format";
 import toast from "react-hot-toast";
-
-// Braintree Drop-in touches `window` at import time, so it must only load
-// in the browser (same reason it worked in CRA, which is client-only).
-const DropIn = dynamic(() => import("braintree-web-drop-in-react"), {
-  ssr: false,
-});
 
 const CartPage = () => {
   const [auth] = useAuth();
   const [cart, setCart] = useCart();
-  const [clientToken, setClientToken] = useState("");
-  const [instance, setInstance] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
@@ -31,10 +23,7 @@ const CartPage = () => {
       cart?.map((item) => {
         total = total + item.price;
       });
-      return total.toLocaleString("en-US", {
-        style: "currency",
-        currency: "USD",
-      });
+      return formatINR(total);
     } catch (error) {
       // console.log(error);
     }
@@ -52,38 +41,31 @@ const CartPage = () => {
     }
   };
 
-  //get payment gateway token
-  const getToken = async () => {
-    try {
-      const { data } = await axios.get("/api/v1/product/braintree/token");
-      setClientToken(data?.clientToken);
-    } catch (error) {
-      // console.log(error);
-    }
-  };
-  useEffect(() => {
-    getToken();
-  }, [auth?.token]);
-
-  //handle payments
-  const handlePayment = async () => {
+  //place order with cash on delivery (no online gateway needed)
+  const handlePlaceOrder = async () => {
     try {
       setLoading(true);
-      const { nonce } = await instance.requestPaymentMethod();
-      const { data } = await axios.post("/api/v1/product/braintree/payment", {
-        nonce,
-        cart,
+      // send IDs only: cart items may carry photo buffers (from
+      // category/filter responses), which would blow past the JSON
+      // body limit — the server only needs the IDs
+      const { data } = await axios.post("/api/v1/product/place-order", {
+        cart: cart.map((i) => ({ _id: i._id })),
       });
       setLoading(false);
-      localStorage.removeItem("cart");
-      setCart([]);
-      router.push("/dashboard/user/orders");
-      toast.success("Payment Completed Successfully ");
+      if (data?.success) {
+        localStorage.removeItem("cart");
+        setCart([]);
+        router.push("/dashboard/user/orders");
+        toast.success("Order Placed Successfully");
+      } else {
+        toast.error(data?.message || "Could not place order");
+      }
     } catch (error) {
-      // console.log(error);
+      toast.error(error?.response?.data?.message || "Could not place order");
       setLoading(false);
     }
   };
+
   return (
     <div className=" cart-page">
       <div className="row">
@@ -105,21 +87,35 @@ const CartPage = () => {
       <div className="container ">
         <div className="row ">
           <div className="col-md-7  p-0 m-0">
-            {cart?.map((p) => (
+            {!cart?.length ? (
+              <div className="no-results">
+                <h5>Your cart is empty</h5>
+                <p>
+                  Browse the collection and add a watch you love — it will
+                  show up here.
+                </p>
+                <button
+                  className="btn btn-dark"
+                  onClick={() => router.push("/")}
+                >
+                  Browse Watches
+                </button>
+              </div>
+            ) : (
+            cart?.map((p) => (
               <div className="row card flex-row" key={p._id}>
                 <div className="col-md-4">
-                  <img
-                    src={apiUrl(`/api/v1/product/product-photo/${p._id}`)}
-                    className="card-img-top"
-                    alt={p.name}
-                    width="100%"
-                    height={"130px"}
-                  />
+                  <div className="cart-thumb">
+                    <img
+                      src={apiUrl(`/api/v1/product/product-photo/${p._id}`)}
+                      alt={p.name}
+                    />
+                  </div>
                 </div>
                 <div className="col-md-4">
                   <p>{p.name}</p>
                   <p>{p.description.substring(0, 30)}</p>
-                  <p>Price : {p.price}</p>
+                  <p>Price : {formatINR(p.price)}</p>
                 </div>
                 <div className="col-md-4 cart-remove-btn">
                   <button
@@ -130,13 +126,22 @@ const CartPage = () => {
                   </button>
                 </div>
               </div>
-            ))}
+            ))
+            )}
           </div>
           <div className="col-md-5 cart-summary ">
             <h2>Cart Summary</h2>
             <p>Total | Checkout | Payment</p>
             <hr />
             <h4>Total : {totalPrice()} </h4>
+            <div className="mb-3">
+              <button
+                className="btn btn-outline-dark"
+                onClick={() => router.push("/")}
+              >
+                Continue Shopping
+              </button>
+            </div>
             {auth?.user?.address ? (
               <>
                 <div className="mb-3">
@@ -169,29 +174,27 @@ const CartPage = () => {
                 )}
               </div>
             )}
+            {/* checkout: this is a learning project with no payment
+                gateway, so ordering is cash-on-delivery — one button,
+                no card forms, no failing token calls */}
             <div className="mt-2">
-              {!clientToken || !auth?.token || !cart?.length ? (
-                ""
+              {!auth?.token || !cart?.length ? null : !auth?.user?.address ? (
+                <p className="text-muted">
+                  Add your delivery address above to proceed to checkout.
+                </p>
               ) : (
-                <>
-                  <DropIn
-                    options={{
-                      authorization: clientToken,
-                      paypal: {
-                        flow: "vault",
-                      },
-                    }}
-                    onInstance={(instance) => setInstance(instance)}
-                  />
-
+                <div className="cod-box">
+                  <p className="text-muted">
+                    Pay in cash when your order arrives at your doorstep.
+                  </p>
                   <button
-                    className="btn btn-primary"
-                    onClick={handlePayment}
-                    disabled={loading || !instance || !auth?.user?.address}
+                    className="btn btn-dark"
+                    onClick={handlePlaceOrder}
+                    disabled={loading}
                   >
-                    {loading ? "Processing ...." : "Make Payment"}
+                    {loading ? "Placing Order ...." : "Place Order"}
                   </button>
-                </>
+                </div>
               )}
             </div>
           </div>

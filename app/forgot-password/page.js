@@ -4,10 +4,12 @@ import React, { useState } from "react";
 import axios from "@/lib/api-client";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
+import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
 
 const ForgotPasssword = () => {
   const [email, setEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [answer, setAnswer] = useState("");
 
   const router = useRouter();
@@ -60,9 +62,9 @@ const ForgotPasssword = () => {
             required
           />
         </div>
-        <div className="mb-3">
+        <div className="mb-3 password-wrap">
           <input
-            type="password"
+            type={showPassword ? "text" : "password"}
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
             className="form-control"
@@ -70,6 +72,14 @@ const ForgotPasssword = () => {
             placeholder="Enter Your Password"
             required
           />
+          <button
+            type="button"
+            className="password-toggle"
+            aria-label={showPassword ? "Hide password" : "Show password"}
+            onClick={() => setShowPassword((s) => !s)}
+          >
+            {showPassword ? <AiOutlineEyeInvisible /> : <AiOutlineEye />}
+          </button>
         </div>
 
         <button type="submit" className="btn btn-primary">
