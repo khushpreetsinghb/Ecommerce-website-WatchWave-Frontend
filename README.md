@@ -1,70 +1,32 @@
-# Getting Started with Create React App
+# WatchWave frontend (Next.js)
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Next.js 16 App Router storefront for WatchWave. Talks to the Express API in `../backend`.
 
-## Available Scripts
+## Develop
 
-In the project directory, you can run:
+```bash
+npm install
+cp .env.example .env.local   # NEXT_PUBLIC_API_URL=http://localhost:8080
+npm run dev                  # http://localhost:3000 (API proxied to :8080)
+```
 
-### `npm start`
+Run the backend alongside it (`npm run dev` from the repo root runs both).
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+## Build / deploy (Vercel, Netlify…)
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+```bash
+npm run build
+```
 
-### `npm test`
+- Root directory: `frontend`, build command `npm run build`.
+- Env var: `NEXT_PUBLIC_API_URL=https://<your-backend>` (no trailing slash).
+- About/Contact/Policy pages are statically prerendered; product pages are
+  server-rendered per request with per-product `<title>` via `generateMetadata`.
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## Notes
 
-### `npm run build`
-
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
-
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
-
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
-
-### `npm run eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
-
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
-
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+- `lib/api-client.js` — axios instance (relative `/api/*` locally, absolute in prod).
+- `lib/api.js` — `apiUrl()` for `<img>` product-photo URLs (axios baseURL
+  doesn't apply to plain image tags).
+- Route guards live in `components/Routes/` (`PrivateGuard`, `AdminGuard`)
+  and the `app/dashboard/*/layout.js` files, replacing react-router outlets.
