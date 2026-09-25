@@ -19,6 +19,7 @@ import { useCart } from "@/context/cart";
 import axios from "@/lib/api-client";
 import { apiUrl } from "@/lib/api";
 import { formatINR } from "@/lib/format";
+import WatchScrollStory from "@/components/WatchScrollStory";
 
 const FALLBACK_IMAGE = "/images/w1.png";
 
@@ -27,8 +28,27 @@ const productImage = (product) =>
     ? apiUrl(`/api/v1/product/product-photo/${product._id}`)
     : FALLBACK_IMAGE;
 
-const categoryName = (product) => {
-  if (typeof product?.category === "string") return product.category;
+const editorialImage = (product) => {
+  const text = `${product?.slug || ""} ${product?.name || ""}`.toLowerCase();
+  if (/regatta|diver|onyx|meridian|chronograph/.test(text)) {
+    return "/images/cutout/m2.png";
+  }
+  if (/sovereign|imperial|skeleton|luxury/.test(text)) {
+    return "/images/cutout/l1.png";
+  }
+  if (/pulse|smart|fit/.test(text)) {
+    return "/images/cutout/s1.png";
+  }
+  return "/images/cutout/m1.png";
+};
+
+const categoryName = (product, categories = []) => {
+  if (typeof product?.category === "string") {
+    const match = categories.find(
+      (category) => String(category?._id) === String(product.category)
+    );
+    return match?.name || product.category;
+  }
   return product?.category?.name || "WatchWave collection";
 };
 
@@ -37,7 +57,7 @@ const shortDescription = (value) => {
   return text.length > 116 ? `${text.slice(0, 116).trim()}…` : text;
 };
 
-const ProductCard = ({ product, index, onOpen, onAdd }) => (
+const ProductCard = ({ product, index, categories = [], onOpen, onAdd }) => (
   <article className="ww-product-card">
     <button
       type="button"
@@ -53,7 +73,7 @@ const ProductCard = ({ product, index, onOpen, onAdd }) => (
     </button>
     <div className="ww-product-heading">
       <div>
-        <span className="ww-product-category">{categoryName(product)}</span>
+        <span className="ww-product-category">{categoryName(product, categories)}</span>
         <h3>{product.name}</h3>
       </div>
       <strong>{formatINR(product.price)}</strong>
@@ -83,8 +103,15 @@ const HomePage = () => {
   const [filtersOpen, setFiltersOpen] = useState(false);
 
   const isFiltering = checked.length > 0 || radio.length > 0;
-  const heroProduct = products[0];
-  const heroImage = productImage(heroProduct);
+  const heroText = (product) =>
+    `${product?.name || ""} ${product?.description || ""}`.toLowerCase();
+  const heroProduct =
+    products.find((product) =>
+      /luxury|automatic|chronograph|diver|dress watch/.test(heroText(product))
+    ) ||
+    products.find((product) => !/alarm|wall clock/.test(heroText(product))) ||
+    products[0];
+  const heroImage = heroProduct ? editorialImage(heroProduct) : "/images/cutout/m1.png";
 
   const loadCategories = async () => {
     try {
@@ -284,10 +311,10 @@ const HomePage = () => {
           </div>
           <div className="ww-section-heading-aside">
             <p>
-              Five expressions, one easier way to find your next watch. Filter
+              {categories.length || "—"} expressions, one easier way to find your next watch. Filter
               by family or explore the full edit.
             </p>
-            <span>{total || products.length} timepieces · USD / INR</span>
+            <span>{total || products.length} timepieces · prices in INR</span>
           </div>
         </div>
 
@@ -411,6 +438,7 @@ const HomePage = () => {
                       key={product._id}
                       product={product}
                       index={index}
+                      categories={categories}
                       onOpen={setQuickView}
                       onAdd={addToBag}
                     />
@@ -443,34 +471,10 @@ const HomePage = () => {
         </div>
       </section>
 
-      <section className="ww-craft-section" id="craft">
-        <div className="ww-craft-art">
-          <img src={heroImage} alt="A closer look at a WatchWave timepiece" loading="lazy" />
-          <div className="ww-cart-caption">
-            <span>Details worth noticing</span>
-            <span>WatchWave / close study</span>
-          </div>
-        </div>
-        <div className="ww-craft-copy">
-          <p className="ww-kicker">02 / The craft</p>
-          <h2>
-            Precision, with a <em>human side.</em>
-          </h2>
-          <p>
-            A good watch is more than a shape on a wrist. It is the weight,
-            the finish, the way the light catches a case and the feeling that
-            it will still suit you years from now.
-          </p>
-          <div className="ww-spec-row">
-            <div><strong>01</strong><span>considered proportions</span></div>
-            <div><strong>02</strong><span>everyday comfort</span></div>
-            <div><strong>03</strong><span>lasting character</span></div>
-          </div>
-          <Link className="ww-text-link" href="/categories">
-            Explore the families <FiArrowRight aria-hidden="true" />
-          </Link>
-        </div>
-      </section>
+      <WatchScrollStory
+        image={heroImage}
+        name={heroProduct?.name || "WatchWave timepiece"}
+      />
 
       <section className="ww-story-section ww-section" id="story">
         <div className="ww-story-heading">
@@ -541,12 +545,12 @@ const HomePage = () => {
               <span>WatchWave / quick view</span>
             </div>
             <div className="ww-quick-copy">
-              <p className="ww-kicker">{categoryName(quickView)}</p>
+              <p className="ww-kicker">{categoryName(quickView, categories)}</p>
               <h2 id="ww-quick-view-title">{quickView.name}</h2>
               <strong className="ww-quick-price">{formatINR(quickView.price)}</strong>
               <p>{quickView.description || "A considered WatchWave timepiece for the everyday."}</p>
               <dl className="ww-quick-specs">
-                <div><dt>Family</dt><dd>{categoryName(quickView)}</dd></div>
+                <div><dt>Family</dt><dd>{categoryName(quickView, categories)}</dd></div>
                 <div><dt>Availability</dt><dd>In the current edit</dd></div>
                 <div><dt>Delivery</dt><dd>Insured shipping</dd></div>
               </dl>
