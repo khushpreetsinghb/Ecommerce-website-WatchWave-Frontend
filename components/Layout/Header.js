@@ -1,143 +1,166 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import NavLink from "../NavLink";
-import { useAuth } from "@/context/auth";
+import { usePathname } from "next/navigation";
+import {
+  FiChevronDown,
+  FiMenu,
+  FiShoppingBag,
+  FiUser,
+  FiX,
+} from "react-icons/fi";
 import toast from "react-hot-toast";
 import SearchInput from "../Form/SearchInput";
-import useCategory from "@/hooks/useCategory";
+import { useAuth } from "@/context/auth";
 import { useCart } from "@/context/cart";
-import { Badge } from "antd";
+
+const navigation = [
+  { label: "Home", href: "/" },
+  { label: "Collections", href: "/categories" },
+  { label: "Our story", href: "/about" },
+  { label: "Contact", href: "/contact" },
+];
 
 const Header = () => {
+  const pathname = usePathname();
   const [auth, setAuth] = useAuth();
   const [cart] = useCart();
-  const categories = useCategory();
-  const handleLogout = () => {
-    setAuth({
-      ...auth,
-      user: null,
-      token: "",
-    });
-    localStorage.removeItem("auth");
-    toast.success("Logout Successfully");
-  };
-  return (
-    <>
-      <nav className="navbar navbar-expand-lg fixed-top">
-        <div className="container-fluid">
-          <button
-            className="navbar-toggler"
-            type="button"
-            data-bs-toggle="collapse"
-            data-bs-target="#navbarTogglerDemo01"
-            aria-controls="navbarTogglerDemo01"
-            aria-expanded="false"
-            aria-label="Toggle navigation"
-          >
-            <span className="navbar-toggler-icon" />
-          </button>
-          <div className="collapse navbar-collapse" id="navbarTogglerDemo01">
-            <Link href="/" className="navbar-brand">
-              <span className="brand-mark">W</span>
-              Watch<span className="brand-gold">Wave</span>
-            </Link>
-            <ul className="navbar-nav ms-auto mb-2 mb-lg-0 align-items-lg-center">
-              <SearchInput />
-              <li className="nav-item">
-                <NavLink href="/" className="nav-link ">
-                  Home
-                </NavLink>
-              </li>
-              <li className="nav-item dropdown">
-                <Link
-                  className="nav-link dropdown-toggle"
-                  href={"/categories"}
-                  data-bs-toggle="dropdown"
-                >
-                  Categories
-                </Link>
-                <ul className="dropdown-menu">
-                  <li>
-                    <Link className="dropdown-item" href={"/categories"}>
-                      All Categories
-                    </Link>
-                  </li>
-                  {categories?.map((c) => (
-                    <li key={c._id || c.slug}>
-                      <Link
-                        className="dropdown-item"
-                        href={`/category/${c.slug}`}
-                      >
-                        {c.name}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </li>
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const cartCount = cart?.length || 0;
 
-              {!auth?.user ? (
-                <>
-                  <li className="nav-item">
-                    <NavLink href="/register" className="nav-link">
-                      Register
-                    </NavLink>
-                  </li>
-                  <li className="nav-item">
-                    <NavLink href="/login" className="nav-link">
-                      Login
-                    </NavLink>
-                  </li>
-                </>
-              ) : (
-                <>
-                  <li className="nav-item dropdown">
-                    <NavLink
-                      className="nav-link dropdown-toggle"
-                      href="#"
-                      role="button"
-                      data-bs-toggle="dropdown"
-                      style={{ border: "none" }}
-                    >
-                      {auth?.user?.name}
-                    </NavLink>
-                    <ul className="dropdown-menu">
-                      <li>
-                        <NavLink
-                          href={`/dashboard/${
-                            auth?.user?.role === 1 ? "admin" : "user"
-                          }`}
-                          className="dropdown-item"
-                        >
-                          Dashboard
-                        </NavLink>
-                      </li>
-                      <li>
-                        <NavLink
-                          onClick={handleLogout}
-                          href="/login"
-                          className="dropdown-item"
-                        >
-                          Logout
-                        </NavLink>
-                      </li>
-                    </ul>
-                  </li>
-                </>
-              )}
-              <li className="nav-item">
-                <NavLink href="/cart" className="nav-link">
-                  <Badge count={cart?.length} showZero offset={[10, -5]}>
-                    Cart
-                  </Badge>
-                </NavLink>
-              </li>
-            </ul>
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 24);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [pathname]);
+
+  const handleLogout = () => {
+    setAuth({ user: null, token: "" });
+    localStorage.removeItem("auth");
+    setMenuOpen(false);
+    toast.success("You have been signed out");
+  };
+
+  const isActive = (href) => {
+    if (href === "/") return pathname === "/";
+    return pathname?.startsWith(href);
+  };
+
+  return (
+    <header className={`site-header ${scrolled ? "is-scrolled" : ""}`}>
+      <div className="site-header-inner">
+        <Link href="/" className="site-brand" aria-label="WatchWave home">
+          <span className="site-brand-mark">W</span>
+          <span className="site-brand-word">
+            Watch<span>Wave</span>
+          </span>
+        </Link>
+
+        <nav className="site-nav" aria-label="Main navigation">
+          {navigation.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={isActive(item.href) ? "is-active" : ""}
+              aria-current={isActive(item.href) ? "page" : undefined}
+            >
+              {item.label}
+            </Link>
+          ))}
+        </nav>
+
+        <div className="site-header-tools">
+          <div className="site-header-search">
+            <SearchInput />
           </div>
+
+          {auth?.user ? (
+            <details className="site-account-menu">
+              <summary className="site-account-trigger">
+                <FiUser aria-hidden="true" />
+                <span>{auth.user.name || "Account"}</span>
+                <FiChevronDown aria-hidden="true" />
+              </summary>
+              <div className="site-account-popover">
+                <Link
+                  href={`/dashboard/${
+                    auth?.user?.role === 1 ? "admin" : "user"
+                  }`}
+                >
+                  Dashboard
+                </Link>
+                <Link href="/dashboard/user/orders">My orders</Link>
+                <button type="button" onClick={handleLogout}>
+                  Sign out
+                </button>
+              </div>
+            </details>
+          ) : (
+            <Link className="site-signin" href="/login">
+              <FiUser aria-hidden="true" />
+              <span>Sign in</span>
+            </Link>
+          )}
+
+          <Link className="site-cart-link" href="/cart" aria-label={`Bag, ${cartCount} items`}>
+            <FiShoppingBag aria-hidden="true" />
+            <span>Bag</span>
+            <b>{cartCount}</b>
+          </Link>
+
+          <button
+            type="button"
+            className="site-menu-toggle"
+            aria-label={menuOpen ? "Close navigation" : "Open navigation"}
+            aria-expanded={menuOpen}
+            onClick={() => setMenuOpen((open) => !open)}
+          >
+            {menuOpen ? <FiX aria-hidden="true" /> : <FiMenu aria-hidden="true" />}
+          </button>
         </div>
-      </nav>
-    </>
+      </div>
+
+      {menuOpen && (
+        <div className="site-mobile-menu">
+          <div className="site-mobile-links">
+            {navigation.map((item) => (
+              <Link key={item.href} href={item.href}>
+                {item.label}
+              </Link>
+            ))}
+          </div>
+          <div className="site-mobile-account">
+            {auth?.user ? (
+              <>
+                <Link
+                  href={`/dashboard/${
+                    auth?.user?.role === 1 ? "admin" : "user"
+                  }`}
+                >
+                  Dashboard
+                </Link>
+                <button type="button" onClick={handleLogout}>
+                  Sign out
+                </button>
+              </>
+            ) : (
+              <>
+                <Link href="/login">Sign in</Link>
+                <Link href="/register">Create an account</Link>
+              </>
+            )}
+          </div>
+          <p>Considered watches for the hours that matter.</p>
+        </div>
+      )}
+    </header>
   );
 };
 

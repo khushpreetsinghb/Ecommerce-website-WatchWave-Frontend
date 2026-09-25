@@ -1,6 +1,7 @@
 import "bootstrap/dist/css/bootstrap.min.css";
 import "antd/dist/reset.css";
 import "./globals.css";
+import "./editorial.css";
 import Providers from "./providers";
 import BootstrapClient from "./BootstrapClient";
 import SiteChrome from "@/components/Layout/SiteChrome";
